@@ -4,11 +4,46 @@
 
 This project plays both roles in a bank's model lifecycle, honestly and in sequence:
 
-- 🎩 **Hat 1 — Line 1 (this repo, Part A):** build a production-shaped **application-fraud detection model** — entity-linkage features, imbalance-aware training, calibrated scores, case-prioritisation metrics.
+- 🎩 **Hat 1 — Line 1 (Part A):** build a production-shaped **application-fraud detection model** — entity-linkage features, imbalance-aware training, calibrated scores, case-prioritisation metrics.
 - 🎩 **Hat 2 — Line 2 (Part B):** take the developer hat off and produce a full **independent validation package** of that same model — conceptual soundness challenge, data-quality assessment, explainability review, challenger benchmarking, stability/drift testing, and a risk-rated findings log — structured the way bank Model Risk Management teams write validation reports (SR 11-7 → SR 26-2 lineage, APRA CPG 235 framing).
-- 🤖 **Part C:** add an **LLM fraud-triage assistant** and validate *it* — evaluation harness, guardrails, red-team failure-mode testing, and a continuous-monitoring design for exactly the class of system that current model-risk guidance (SR 26-2, Apr 2026) leaves out of formal scope.
+- 🤖 **Part C (planned):** add an **LLM fraud-triage assistant** and validate *it* — evaluation harness, guardrails, red-team failure-mode testing, and a continuous-monitoring design for exactly the class of system that current model-risk guidance (SR 26-2, Apr 2026) leaves out of formal scope.
 
 Why this shape: banks run on the three-lines-of-defence model, but almost every portfolio project only ever wears Hat 1. The interesting craft — and the hiring gap — is in Hat 2: proving whether a model is *fit for purpose*, not just performant. Building both sides against the same model, on data with known ground truth, makes the validation checkable rather than performative.
+
+## Pipeline architecture
+
+```mermaid
+flowchart LR
+    subgraph Data
+        A["Synthetic application stream<br/>80k apps · 180 days · 2.5% fraud<br/>ring + opportunistic patterns"]
+    end
+    subgraph "Part A — Hat 1: Developer"
+        B["Point-in-time features<br/>entity velocity · entity degree<br/>affordability ratios"]
+        C["Time-ordered split<br/>70 / 15 / 15"]
+        D["LightGBM<br/>scale_pos_weight imbalance"]
+        E["Isotonic calibration"]
+        F["Champion model<br/>PR-AUC 0.873"]
+    end
+    subgraph "Part B — Hat 2: Validator"
+        G["Challenger benchmark<br/>logistic regression · shallow GBM"]
+        H["Feature-family ablation"]
+        I["Income perturbation<br/>sensitivity test"]
+        J["CleanLab label-quality scan"]
+        K["PSI drift analysis"]
+        L["SHAP explainability review"]
+        M["Risk-rated findings log<br/>+ fit-for-purpose verdict"]
+    end
+    subgraph Outputs
+        N["Validation report<br/>docs/validation_report.md"]
+        O["LinkedIn carousels<br/>linkedin/*.pdf"]
+    end
+
+    A --> B --> C --> D --> E --> F
+    F --> G & H & I & J & K & L --> M
+    M --> N --> O
+```
+
+The same champion model (`F`) is the input to every Part B check — nothing about the validator's role changes the model, only tests it.
 
 ## Part A: the fraud model
 
@@ -45,9 +80,15 @@ Synthetic-first is a deliberate choice, not a shortcut: **known ground truth is 
 | Top-1% capture: ring fraud | 90.0% | Entity-linkage features do their job |
 | Top-1% capture: opportunistic | **57.5%** | ⚠️ Known segment weakness — flagged for the Part B findings log |
 
-That last row is the point of this project: a headline PR-AUC of 0.87 looks shippable, but segment analysis shows the model leans on network signals and under-detects singleton fraud. A validation report exists to surface exactly this.
+<p align="center">
+  <img src="reports/figures/pr_curve.png" width="32%" alt="Precision-recall curve"/>
+  <img src="reports/figures/calibration_curve.png" width="32%" alt="Calibration curve"/>
+  <img src="reports/figures/feature_importance.png" width="32%" alt="Feature importance"/>
+</p>
 
-Reproduce with `python run_pipeline.py` — metrics land in `reports/metrics.json`, plots in `reports/figures/` (PR curve, calibration curve, feature importances).
+That last table row is the point of this project: a headline PR-AUC of 0.87 looks shippable, but segment analysis shows the model leans on network signals and under-detects singleton fraud. A validation report exists to surface exactly this.
+
+Reproduce with `python run_pipeline.py` — metrics land in `reports/metrics.json`, plots in `reports/figures/`.
 
 ### Quickstart
 
@@ -62,29 +103,49 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 What the validation caught that Part A's "shippable" metrics hid:
 
+<p align="center">
+  <img src="reports/validation/figures/challenger_comparison.png" width="48%" alt="Challenger benchmark chart"/>
+  <img src="reports/validation/figures/feature_ablation.png" width="48%" alt="Feature-family ablation chart"/>
+</p>
+
 - **F1 (High):** a simpler challenger *beats* the champion — PR-AUC 0.887 vs 0.873. The complexity was unearned.
 - **F2 (High):** ablation shows the "multi-factor" model is secretly a single-factor affordability model (PR-AUC collapses 0.873 → 0.466 without ratio features; removing all entity-linkage features costs 0.004).
 - **F3 (High):** understating self-reported income by 20% turns over **92% of the top-1% investigation queue** — the dominant feature is applicant-manipulable.
-- **F4–F8:** segment blind spots (broker channel, opportunistic fraud), PSI alarm-fatigue tension (9 features breach drift thresholds while the score is stable), age-proxy fairness risk, label-scanner usage guidance, explanation legibility.
+
+<p align="center">
+  <img src="reports/validation/figures/segment_capture.png" width="48%" alt="Segment capture chart"/>
+  <img src="reports/validation/figures/shap_summary.png" width="48%" alt="SHAP summary plot"/>
+</p>
+
+- **F4 (Medium):** segment blind spots — 90% ring-fraud capture vs 57.5% opportunistic (chart above), and broker channel (PR-AUC 0.777) trails online (0.897).
+- **F5 (Medium):** PSI alarm-fatigue tension — 9 of 24 features breach drift thresholds while the score itself is stable (PSI 0.008), because entity-velocity features are inherently bursty by design.
+- **F6 (Medium):** `age` carries high SHAP attribution (chart above) — a fairness/proxy-discrimination risk if scores ever moved beyond triage.
+- **F7 (Low):** CleanLab label-quality scan usage guidance; **F8 (Low):** explanation legibility for the case-management UI.
 
 The research-grounded failure-scenario catalog behind these checks: [docs/validation_scenarios.md](docs/validation_scenarios.md).
+
+## LinkedIn write-up
+
+The story and a 10-item field guide to silent fraud-model failure modes, built as swipeable carousels: [linkedin/carousel_1_two_hats_story.pdf](linkedin/carousel_1_two_hats_story.pdf), [linkedin/carousel_2_silent_failure_modes.pdf](linkedin/carousel_2_silent_failure_modes.pdf), post captions in [linkedin/post_copy.md](linkedin/post_copy.md).
 
 ## Repo map
 
 ```
-run_pipeline.py            # end-to-end Part A entrypoint
-src/twohats/synth_data.py  # fraud-pattern data generator (ground truth by construction)
-src/twohats/features.py    # point-in-time feature engineering
-src/twohats/train.py       # time-split, imbalance-aware LightGBM, calibration
-src/twohats/evaluate.py    # fraud-ops metrics + report artefacts
+run_pipeline.py               # Part A entrypoint
+run_validation.py             # Part B entrypoint
+src/twohats/synth_data.py     # fraud-pattern data generator (ground truth by construction)
+src/twohats/features.py       # point-in-time feature engineering
+src/twohats/train.py          # time-split, imbalance-aware LightGBM, calibration
+src/twohats/evaluate.py       # fraud-ops metrics + report artefacts
+src/twohats/validation/       # challenger / drift / stress / label-quality / SHAP checks
 docs/validation_framework.md  # Part B methodology (SR 26-2 / APRA-aligned)
-docs/validation_report.md  # Part B outcome: findings log + verdict (flagship artefact)
+docs/validation_report.md     # Part B outcome: findings log + verdict (flagship artefact)
 docs/validation_scenarios.md  # research-grounded failure-scenario catalog
-docs/model_card.md         # champion model card + assumptions register
-src/twohats/validation/    # challenger / drift / stress / label-quality / SHAP checks
-run_validation.py          # Part B entrypoint
-linkedin/                  # carousel PDFs telling the story (generated by tools/make_carousels.py)
-docs/PROJECT_PLAN.md       # roadmap and phase gates
+docs/model_card.md            # champion model card + assumptions register
+docs/PROJECT_PLAN.md          # roadmap and phase gates
+reports/figures/               # Part A charts (PR curve, calibration, feature importance)
+reports/validation/figures/    # Part B charts (challenger, ablation, segment, SHAP)
+linkedin/                      # carousel PDFs + post copy (tools/make_carousels.py generates them)
 ```
 
 ## Roadmap
