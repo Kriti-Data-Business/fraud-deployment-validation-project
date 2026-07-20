@@ -1,0 +1,210 @@
+{
+  "champion_metrics": {
+    "pr_auc": 0.873151573832978,
+    "roc_auc": 0.9894504515308542,
+    "precision_at_0.5pct": 1.0,
+    "precision_at_1pct": 0.9916666666666667,
+    "precision_at_5pct": 0.375,
+    "recall_at_1pct_fpr": 0.8483606557377049,
+    "brier_score": 0.004488088285870206,
+    "prevalence": 0.02033333333333333,
+    "n": 12000
+  },
+  "segments": {
+    "ring": {
+      "n": 110,
+      "top1pct_capture": 0.9
+    },
+    "opportunistic": {
+      "n": 134,
+      "top1pct_capture": 0.5746268656716418
+    },
+    "channel=online": {
+      "n": 5439,
+      "top1pct_capture": 0.022614451185879757,
+      "pr_auc": 0.8969441944920437
+    },
+    "channel=broker": {
+      "n": 2346,
+      "top1pct_capture": 0.00937766410912191,
+      "pr_auc": 0.7772283160703162
+    },
+    "amount>=100k": {
+      "n": 180,
+      "top1pct_capture": 0.38333333333333336,
+      "pr_auc": 0.9811968314287374
+    }
+  },
+  "label_quality": {
+    "n_scanned": 25000,
+    "n_flagged": 83,
+    "flagged_rate": 0.00332,
+    "flagged_fraud_share": 0.5903614457831325,
+    "flagged_by_type": {
+      "opportunistic": 41,
+      "none": 34,
+      "ring": 8
+    }
+  },
+  "challengers": [
+    {
+      "model": "champion (calibrated LightGBM)",
+      "pr_auc": 0.8732,
+      "precision_at_1pct": 0.9917,
+      "recall_at_1pct_fpr": 0.8484
+    },
+    {
+      "model": "challenger: logistic regression",
+      "pr_auc": 0.8569,
+      "precision_at_1pct": 1.0,
+      "recall_at_1pct_fpr": 0.8279
+    },
+    {
+      "model": "challenger: shallow GBM",
+      "pr_auc": 0.8873,
+      "precision_at_1pct": 1.0,
+      "recall_at_1pct_fpr": 0.8525
+    }
+  ],
+  "income_perturbation": {
+    "income+20%": {
+      "mean_abs_score_shift": 0.003928058935446099,
+      "top1pct_queue_turnover": 0.30000000000000004
+    },
+    "income-20%": {
+      "mean_abs_score_shift": 0.12231541140815652,
+      "top1pct_queue_turnover": 0.9166666666666666
+    }
+  },
+  "family_ablation": [
+    {
+      "variant": "full model",
+      "pr_auc": 0.8732,
+      "precision_at_1pct": 0.9917,
+      "recall_at_1pct_fpr": 0.8484
+    },
+    {
+      "variant": "without entity-linkage family",
+      "pr_auc": 0.869,
+      "precision_at_1pct": 1.0,
+      "recall_at_1pct_fpr": 0.8408
+    },
+    {
+      "variant": "without affordability family",
+      "pr_auc": 0.4657,
+      "precision_at_1pct": 0.5833,
+      "recall_at_1pct_fpr": 0.4953
+    }
+  ],
+  "drift": {
+    "score_psi": {
+      "psi": 0.0079,
+      "rating": "stable"
+    },
+    "feature_psi_top10": [
+      {
+        "feature": "devices_per_address",
+        "psi": 0.8475,
+        "rating": "action"
+      },
+      {
+        "feature": "address_id_apps_30d",
+        "psi": 0.8317,
+        "rating": "action"
+      },
+      {
+        "feature": "address_id_apps_7d",
+        "psi": 0.8317,
+        "rating": "action"
+      },
+      {
+        "feature": "phones_per_device",
+        "psi": 0.4625,
+        "rating": "action"
+      },
+      {
+        "feature": "emails_per_device",
+        "psi": 0.4599,
+        "rating": "action"
+      },
+      {
+        "feature": "device_id_apps_30d",
+        "psi": 0.4599,
+        "rating": "action"
+      },
+      {
+        "feature": "device_id_apps_7d",
+        "psi": 0.4599,
+        "rating": "action"
+      },
+      {
+        "feature": "phone_apps_30d",
+        "psi": 0.4406,
+        "rating": "action"
+      },
+      {
+        "feature": "phone_apps_7d",
+        "psi": 0.4406,
+        "rating": "action"
+      },
+      {
+        "feature": "income",
+        "psi": 0.0012,
+        "rating": "stable"
+      }
+    ],
+    "n_features_flagged": 9
+  },
+  "shap": {
+    "global_top10_mean_abs_shap": {
+      "amount_income_ratio": 1.0578,
+      "employment_age_ratio": 0.718,
+      "requested_amount": 0.5246,
+      "existing_customer": 0.3249,
+      "devices_per_address": 0.3115,
+      "address_id_apps_7d": 0.2998,
+      "emails_per_device": 0.2909,
+      "employment_years": 0.2837,
+      "income": 0.2494,
+      "is_free_email": 0.2465
+    },
+    "top_queue_local_explanations": [
+      {
+        "app_index": 2041,
+        "score": 1.0,
+        "actual_fraud_type": "opportunistic",
+        "top_drivers": {
+          "employment_age_ratio": 4.679,
+          "amount_income_ratio": 1.906,
+          "employment_years": 1.878,
+          "requested_amount": 1.488,
+          "age": 0.946
+        }
+      },
+      {
+        "app_index": 5852,
+        "score": 1.0,
+        "actual_fraud_type": "ring",
+        "top_drivers": {
+          "amount_income_ratio": 7.497,
+          "requested_amount": 1.661,
+          "address_id_apps_7d": 1.551,
+          "phone_apps_7d": 1.127,
+          "emails_per_device": 0.905
+        }
+      },
+      {
+        "app_index": 5687,
+        "score": 1.0,
+        "actual_fraud_type": "opportunistic",
+        "top_drivers": {
+          "amount_income_ratio": 12.422,
+          "requested_amount": 1.857,
+          "devices_per_address": -1.096,
+          "address_id_apps_7d": 0.929,
+          "address_id_apps_30d": 0.265
+        }
+      }
+    ]
+  }
+}

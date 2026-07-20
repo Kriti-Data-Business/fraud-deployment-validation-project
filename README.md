@@ -56,6 +56,19 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/python run_pipeline.py            # full pipeline, ~1 min
 ```
 
+## Part B: the independent validation
+
+`python run_validation.py` re-derives the champion and runs the full check suite — challenger benchmarking, feature-family ablation, income-perturbation stress, CleanLab label-quality scan, PSI drift analysis, SHAP review, segment analysis. The written outcome is **[docs/validation_report.md](docs/validation_report.md)**: 8 risk-rated findings and a *fit-for-purpose-with-conditions* verdict.
+
+What the validation caught that Part A's "shippable" metrics hid:
+
+- **F1 (High):** a simpler challenger *beats* the champion — PR-AUC 0.887 vs 0.873. The complexity was unearned.
+- **F2 (High):** ablation shows the "multi-factor" model is secretly a single-factor affordability model (PR-AUC collapses 0.873 → 0.466 without ratio features; removing all entity-linkage features costs 0.004).
+- **F3 (High):** understating self-reported income by 20% turns over **92% of the top-1% investigation queue** — the dominant feature is applicant-manipulable.
+- **F4–F8:** segment blind spots (broker channel, opportunistic fraud), PSI alarm-fatigue tension (9 features breach drift thresholds while the score is stable), age-proxy fairness risk, label-scanner usage guidance, explanation legibility.
+
+The research-grounded failure-scenario catalog behind these checks: [docs/validation_scenarios.md](docs/validation_scenarios.md).
+
 ## Repo map
 
 ```
@@ -72,7 +85,7 @@ docs/PROJECT_PLAN.md       # roadmap and phase gates
 
 - [x] **Part A** — fraud model v1: pipeline, calibrated model, evaluation report
 - [x] **Week 1 artifact** — validation framework doc ([docs/validation_framework.md](docs/validation_framework.md))
-- [ ] **Part B** — independent validation package: CleanLab data-quality pass, SHAP review, challenger benchmark, PSI drift analysis, risk-rated findings log, report PDF
+- [x] **Part B** — independent validation package: model card, CleanLab pass, SHAP review, challenger benchmark, ablation + perturbation stress, PSI drift, risk-rated findings log ([validation report](docs/validation_report.md))
 - [ ] **Part C** — LLM fraud-triage assistant + its validation: DeepEval suite, guardrails, red-team failure modes, continuous-monitoring design
 - [ ] Stretch: GNN fraud-ring detection on the entity graph
 

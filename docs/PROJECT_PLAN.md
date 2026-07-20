@@ -15,15 +15,16 @@ Target roles this project speaks to: AI/model validation in Model Risk Managemen
 
 ## Gate 2 — Independent validation package *(target ~23 Aug 2026)*
 
-- [ ] Model card (intended use, non-uses, assumptions register)
-- [ ] Conceptual-soundness challenge incl. leakage review
-- [ ] Validator-side data quality: CleanLab label-noise scan, independent EDA
-- [ ] SHAP explainability review (global + case-level for top-queue applications)
-- [ ] Challenger models: regularised logistic regression + alternative GBM; champion-vs-challenger table
-- [ ] Sensitivity/stress: input perturbation, feature-family ablation
-- [ ] PSI/CSI drift analysis across time windows
-- [ ] Risk-rated findings log (starting with the known opportunistic-segment weakness) + fit-for-purpose verdict
-- [ ] **Validation report PDF** — the flagship portfolio artefact
+- [x] Model card (intended use, non-uses, assumptions register) — [model_card.md](model_card.md)
+- [x] Conceptual-soundness challenge incl. leakage review
+- [x] Validator-side data quality: CleanLab label-noise scan (25k rows, scanner-FPR insight)
+- [x] SHAP explainability review (global + case-level for top-queue applications)
+- [x] Challenger models: logistic regression + shallow GBM — **challenger beat champion (F1)**
+- [x] Sensitivity/stress: income ±20% perturbation, feature-family ablation — **F2, F3**
+- [x] PSI drift analysis across time windows — **alarm-fatigue finding (F5)**
+- [x] Risk-rated findings log (8 findings) + verdict: fit for purpose with conditions — [validation_report.md](validation_report.md)
+- [x] Failure-scenario catalog from web research — [validation_scenarios.md](validation_scenarios.md)
+- [ ] LinkedIn carousel PDFs (2) — story carousel + scenario-checklist carousel
 
 ## Gate 3 — LLM triage assistant + its validation *(target ~13 Sep 2026)*
 

@@ -35,8 +35,8 @@ def time_split(df: pd.DataFrame, train_frac: float = 0.7, valid_frac: float = 0.
     return df.iloc[:i1], df.iloc[i1:i2], df.iloc[i2:]
 
 
-def train_model(train: pd.DataFrame, valid: pd.DataFrame):
-    cols = feature_columns(train)
+def train_model(train: pd.DataFrame, valid: pd.DataFrame, cols: list[str] | None = None):
+    cols = cols if cols is not None else feature_columns(train)
     x_tr, x_va = train[cols].copy(), valid[cols].copy()
     for c in CATEGORICAL:
         x_tr[c] = x_tr[c].astype("category")
