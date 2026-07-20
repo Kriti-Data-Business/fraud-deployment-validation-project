@@ -237,7 +237,7 @@ def carousel_guide():
     y = d.kicker("A field guide for ML in fraud & credit", H - 92)
     y = d.head("A fraud model can look perfect and still be broken.", y - 16, 34)
     y = d.head("10 silent failure modes — and the checks that catch them.", y - 8, 26, color=HexColor(GREEN))
-    y = d.body("I validated my own fraud model the way a bank's Model Risk team would. Six of these ten failures were live in it. The marked ones ▸ I caught in my own build.", y - 20, 16)
+    y = d.body("I validated my own fraud model the way a bank's Model Risk team would. Six of these ten failures were live in it — the red-tagged slides are the ones I caught in my own build.", y - 20, 16)
     d.body("Save this for your next model review →", 96, 15, color=HexColor(GREEN))
     d.end()
 
