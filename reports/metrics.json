@@ -1,0 +1,17 @@
+{
+  "pr_auc": 0.873151573832978,
+  "roc_auc": 0.9894504515308542,
+  "precision_at_0.5pct": 1.0,
+  "precision_at_1pct": 0.9916666666666667,
+  "precision_at_5pct": 0.375,
+  "recall_at_1pct_fpr": 0.8483606557377049,
+  "brier_score": 0.004488088285870206,
+  "prevalence": 0.02033333333333333,
+  "n": 12000,
+  "train_rows": 56000,
+  "best_iteration": 246,
+  "top1pct_capture_by_fraud_type": {
+    "ring": 0.9,
+    "opportunistic": 0.5746268656716418
+  }
+}
