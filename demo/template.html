@@ -131,7 +131,7 @@ table { width: 100%; border-collapse: collapse; }
       <h1>Triage Guardrail Bench</h1>
       <p class="sub">An investigator sees an AI-written summary of a flagged loan application. Break the assistant on purpose and watch what the guardrails catch. Part of Two Hats, a fraud model and its independent validation.</p>
     </div>
-    <div class="tags"><span class="tag">Synthetic data</span><span class="tag">Stand-in assistants</span><span class="tag">No live LLM yet</span></div>
+    <div class="tags"><span class="tag">Synthetic data</span><span class="tag">Stand-in assistants</span><span class="tag" id="live-tag">No live LLM yet</span></div>
   </header>
 
   <div class="layout">
@@ -201,6 +201,11 @@ table { width: 100%; border-collapse: collapse; }
         <div class="panel stat"><div class="n" id="s1"></div><p class="t" id="s1t"></p></div>
         <div class="panel stat"><div class="n" id="s2"></div><p class="t" id="s2t"></p></div>
         <div class="panel stat"><div class="n" id="s3"></div><p class="t" id="s3t"></p></div>
+      </section>
+      <section class="panel" id="live" aria-label="Live model results" hidden>
+        <h2><span>Live models through the same bench</span><span id="live-n"></span></h2>
+        <div class="pad" style="overflow-x:auto"><table class="facts" id="live-table"></table>
+          <p class="hint" id="live-note" style="margin-top:10px"></p></div>
       </section>
       <p class="foot" id="foot"></p>
     </div>
@@ -337,6 +342,22 @@ table { width: 100%; border-collapse: collapse; }
     $('foot').textContent = 'Results above come from all ' + DATA.meta.queue_size + ' flagged cases (top 1% of an out-of-time synthetic test fold). The ' + DATA.meta.sample_size + ' cases listed are a stratified sample. Every output and verdict shown here was produced by the Python harness in the repository and stored, so nothing is re-implemented in the page. The assistants are deterministic stand-ins, not a language model.';
   }
 
+  function renderLive() {
+    var L = DATA.live || [];
+    if (!L.length) return;
+    $('live').hidden = false;
+    $('live-tag').textContent = 'Live results: ' + L.length + ' model' + (L.length > 1 ? 's' : '');
+    $('live-n').textContent = L.length + ' model' + (L.length > 1 ? 's' : '');
+    var atk = Object.keys(L[0].attacks);
+    var head = '<tr><td></td><td style="text-align:left;font:600 11px var(--mono);color:var(--muted)">MEASURE</td>' + L.map(function (m) { return '<td style="font:600 11px var(--mono);color:var(--muted)">' + esc(m.model) + '</td>'; }).join('') + '</tr>';
+    var rows = [['Clean summaries blocked', function (m) { return m.clean.blocked_by_guardrails + ' of ' + m.clean.n; }],
+      ['Pattern correct on true fraud', function (m) { return m.clean.pattern_correct_on_true_fraud + ' of ' + m.clean.true_fraud_n; }],
+      ['Unparseable or API errors', function (m) { return m.clean.unparseable_or_api_error; }]];
+    atk.forEach(function (a) { rows.push(['Note "' + (ATTACK_TEXT[a] || a) + '": output changed / escaped', function (m) { var x = m.attacks[a]; return x.output_changed + ' / ' + x.changed_and_escaped + ' of ' + x.n; }]); });
+    $('live-table').innerHTML = head + rows.map(function (r) { return '<tr><td></td><td style="text-align:left;font-family:var(--sans)">' + esc(r[0]) + '</td>' + L.map(function (m) { return '<td>' + esc(r[1](m)) + '</td>'; }).join('') + '</tr>'; }).join('');
+    $('live-note').textContent = 'Real model calls via OpenRouter on the sample sizes shown, temperature 0, one prompt. These describe each model under this prompt on synthetic data. They are not a benchmark. "Changed" means risk level, pattern or next step differed from the model\u2019s own clean answer for that case.';
+  }
+
   function setPreset(p) {
     st.rederive = true; $('rederive').checked = true;
     if (p === 'decline') { st.mode = 'fault'; st.fault = 'decision_language'; fsel.value = st.fault; }
@@ -366,6 +387,6 @@ table { width: 100%; border-collapse: collapse; }
   window.__tour = function (t) { var el = $('tour'); el.hidden = !tourOn() || !t; el.textContent = t || ''; };
   window.__demo = { set: function (o) { Object.keys(o).forEach(function (k) { st[k] = o[k]; }); if ('fault' in o) fsel.value = st.fault; if ('attack' in o) asel.value = st.attack; $('rederive').checked = st.rederive; renderCases(); render(); } };
 
-  renderCases(); renderStats(); render();
+  renderCases(); renderStats(); renderLive(); render();
 })();
 </script>

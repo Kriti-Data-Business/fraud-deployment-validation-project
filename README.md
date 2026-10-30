@@ -10,6 +10,21 @@ This project plays both roles in a bank's model lifecycle, honestly and in seque
 
 Why this shape: banks run on the three-lines-of-defence model, but almost every portfolio project only ever wears Hat 1. The interesting craft — and the hiring gap — is in Hat 2: proving whether a model is *fit for purpose*, not just performant. Building both sides against the same model, on data with known ground truth, makes the validation checkable rather than performative.
 
+## Reading this from a retail bank's seat
+
+What a retail bank's fraud and credit teams ask of a model, and where this repo answers it:
+
+| The question | Where it is answered |
+|---|---|
+| Does it catch the fraud that costs us, and how many genuine customers does it hold up? | Part A reports precision at the top 1% of the queue and recall at a fixed 1% false-positive rate, not just AUC. |
+| Would an independent team sign it off? | Part B is a validation package written separately from the build: challenger benchmark, ablation, stress test, drift analysis, risk-rated findings. |
+| Does it treat customers fairly? | Not settled, and the repo says so. `age` and a ratio derived from it are high-attribution features in the model, which Part B raises as a fairness and proxy risk (finding F6). The Part C triage layer keeps age out of the facts it shows the assistant. |
+| What happens when the data shifts? | PSI drift analysis, including a finding that industry-standard thresholds would raise continuous false alarms on bursty velocity features (F5). |
+| Can we put an AI assistant in front of investigators? | Part C: it never decides, every claim cites a numbered fact, any guardrail failure falls back to the raw facts, and the test bench tries to break it first. |
+| How would we run it safely? | `docs/monitoring_design.md`: signals, thresholds, a per-case, per-segment and global kill switch. Design only, not implemented. |
+
+All data is synthetic, generated so that the true fraud pattern is known. That makes the validation checkable, but real fraud will be messier and no number here is a claim about a real bank.
+
 ## Pipeline architecture
 
 ```mermaid
@@ -130,7 +145,11 @@ The assistant never decides. It turns a flagged application's numbered facts int
 
 **Status, stated plainly:** the test bench is built and run. A live LLM has not yet been run through it. The numbers below measure the harness and guardrails using deterministic stand-in assistants with defects injected on purpose ("validating the validator").
 
-`python run_triage.py` runs it on the Part A model's top-1% queue (120 cases). `pytest tests` tests the guardrails.
+`python run_triage.py` runs it on the Part A model's top-1% queue (120 cases). `pytest tests` tests the guardrails. CI runs both on every push, and the `Dockerfile` runs the harness end to end (`docker build -t twohats . && docker run --rm twohats`).
+
+**Interactive demo:** `demo/index.html` is a single self-contained page (open it in a browser). Pick a flagged case, inject a fault or a prompt-injection note, and see which guardrail fires. Every output and verdict on it was produced by the Python harness and stored, so the page re-implements nothing.
+
+**Live models:** `run_live.py` sends the same cases and attacks to real models through OpenRouter (`export OPENROUTER_API_KEY=...`, then `python run_live.py --models <slug> <slug>`). It writes `reports/triage/live_*.json`, and `python tools/build_demo.py` then adds those results to the demo page. Until those files exist, every number in this section comes from stand-in assistants.
 
 | Check | Result |
 |---|---|
@@ -165,6 +184,9 @@ docs/PROJECT_PLAN.md          # roadmap and phase gates
 reports/figures/               # Part A charts (PR curve, calibration, feature importance)
 reports/validation/figures/    # Part B charts (challenger, ablation, segment, SHAP)
 run_triage.py                  # Part C entrypoint: flagged queue, seeded faults, red-team
+run_live.py                    # Part C: same bench against real models via OpenRouter
+demo/index.html                # interactive guardrail bench (built by tools/build_demo.py)
+Dockerfile, .github/workflows/ci.yml   # container and CI (tests + full harness)
 src/twohats/triage/            # case facts, assistant contract, guardrails, faults
 tests/test_triage.py           # guardrail tests
 docs/part_c_validation.md      # Part C findings log + verdict
