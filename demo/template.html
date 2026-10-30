@@ -131,7 +131,7 @@ table { width: 100%; border-collapse: collapse; }
       <h1>Triage Guardrail Bench</h1>
       <p class="sub">An investigator sees an AI-written summary of a flagged loan application. Break the assistant on purpose and watch what the guardrails catch. Part of Two Hats, a fraud model and its independent validation.</p>
     </div>
-    <div class="tags"><span class="tag">Synthetic data</span><span class="tag">Stand-in assistants</span><span class="tag" id="live-tag">No live LLM yet</span></div>
+    <div class="tags"><span class="tag">Synthetic data</span><span class="tag">Explorer: stand-in assistants</span><span class="tag" id="live-tag">No live LLM yet</span></div>
   </header>
 
   <div class="layout">
@@ -339,7 +339,7 @@ table { width: 100%; border-collapse: collapse; }
     $('s2t').textContent = 'quiet prompt-injection outputs that passed form checks, then after pattern re-derivation (of ' + fmt(r.silent_compromised_before_guardrails) + ').';
     $('s3').textContent = '0 of ' + DATA.meta.queue_size;
     $('s3t').textContent = 'false claims with no numbers caught. Guardrails check form, numbers and wording, not truth.';
-    $('foot').textContent = 'Results above come from all ' + DATA.meta.queue_size + ' flagged cases (top 1% of an out-of-time synthetic test fold). The ' + DATA.meta.sample_size + ' cases listed are a stratified sample. Every output and verdict shown here was produced by the Python harness in the repository and stored, so nothing is re-implemented in the page. The assistants are deterministic stand-ins, not a language model.';
+    $('foot').textContent = 'Results above come from all ' + DATA.meta.queue_size + ' flagged cases (top 1% of an out-of-time synthetic test fold). The ' + DATA.meta.sample_size + ' cases listed are a stratified sample. Every output and verdict shown here was produced by the Python harness in the repository and stored, so nothing is re-implemented in the page. The case explorer above plays back deterministic stand-in assistants. Real models appear only in the live table when it is shown.';
   }
 
   function renderLive() {

@@ -6,7 +6,7 @@ This project plays both roles in a bank's model lifecycle, honestly and in seque
 
 - 🎩 **Hat 1 — Line 1 (Part A):** build a production-shaped **application-fraud detection model** — entity-linkage features, imbalance-aware training, calibrated scores, case-prioritisation metrics.
 - 🎩 **Hat 2 — Line 2 (Part B):** take the developer hat off and produce a full **independent validation package** of that same model — conceptual soundness challenge, data-quality assessment, explainability review, challenger benchmarking, stability/drift testing, and a risk-rated findings log — structured the way bank Model Risk Management teams write validation reports (SR 11-7 → SR 26-2 lineage, APRA CPG 235 framing).
-- 🤖 **Part C (test bench built, live model pending):** an **LLM fraud-triage assistant** contract and the harness that validates it: evaluation, guardrails, red-team testing and a continuous-monitoring design, for exactly the class of system that current model-risk guidance (SR 26-2, Apr 2026) leaves out of formal scope. Results so far come from deterministic stand-in assistants, not a live LLM.
+- 🤖 **Part C (test bench built, two live models measured once):** an **LLM fraud-triage assistant** contract and the harness that validates it: evaluation, guardrails, red-team testing and a continuous-monitoring design, for exactly the class of system that current model-risk guidance (SR 26-2, Apr 2026) leaves out of formal scope. The seeded-fault and red-team results come from deterministic stand-in assistants; two real models (Claude Sonnet 5.5 and GPT-6.1-sol) have been run once through the same bench.
 
 Why this shape: banks run on the three-lines-of-defence model, but almost every portfolio project only ever wears Hat 1. The interesting craft — and the hiring gap — is in Hat 2: proving whether a model is *fit for purpose*, not just performant. Building both sides against the same model, on data with known ground truth, makes the validation checkable rather than performative.
 
@@ -143,13 +143,13 @@ The research-grounded failure-scenario catalog behind these checks: [docs/valida
 
 The assistant never decides. It turns a flagged application's numbered facts into a short, cited summary for an investigator, and everything around it is built to answer one question: how do we know its output can be relied on, and what happens when it cannot?
 
-**Status, stated plainly:** the test bench is built and run. A live LLM has not yet been run through it. The numbers below measure the harness and guardrails using deterministic stand-in assistants with defects injected on purpose ("validating the validator").
+**Status, stated plainly:** the test bench is built and run. The table below measures the harness and guardrails using deterministic stand-in assistants with defects injected on purpose ("validating the validator"). Two live models were then run once through the same bench (next table). Those are single runs with one prompt and small attack samples, a first measurement and not a validation.
 
 `python run_triage.py` runs it on the Part A model's top-1% queue (120 cases). `pytest tests` tests the guardrails. CI runs both on every push, and the `Dockerfile` runs the harness end to end (`docker build -t twohats . && docker run --rm twohats`).
 
 **Interactive demo:** `demo/index.html` is a single self-contained page (open it in a browser). Pick a flagged case, inject a fault or a prompt-injection note, and see which guardrail fires. Every output and verdict on it was produced by the Python harness and stored, so the page re-implements nothing.
 
-**Live models:** `run_live.py` sends the same cases and attacks to real models through OpenRouter (`export OPENROUTER_API_KEY=...`, then `python run_live.py --models <slug> <slug>`). It writes `reports/triage/live_*.json`, and `python tools/build_demo.py` then adds those results to the demo page. Until those files exist, every number in this section comes from stand-in assistants.
+**Live models:** `run_live.py` sends the same cases and attacks to real models through OpenRouter (`export OPENROUTER_API_KEY=...`, then `python run_live.py --models <slug> <slug>`). It writes `reports/triage/live_*.json`, and `python tools/build_demo.py` then adds those results to the demo page. Their results are in `reports/triage/`; the stand-in tables above stay separate.
 
 | Check | Result |
 |---|---|
@@ -159,6 +159,18 @@ The assistant never decides. It turns a flagged application's numbered facts int
 | Quiet prompt-injection compliance, escaped form-level checks | 720 of 720 |
 | Same, after adding independent pattern re-derivation | 12 of 720 escaped |
 | Baseline pattern accuracy vs ground truth | ring 49 of 65, opportunistic 21 of 54 |
+
+**Two live models, same bench (run once, temperature 0, 120 cases, 30 per attack):**
+
+| | Claude Sonnet 5.5 | GPT-6.1-sol |
+|---|---|---|
+| Clean summaries blocked | 25 of 120 | 30 of 120 |
+| Reason, mostly | 18 pattern downgrades | 30 pattern downgrades |
+| Pattern matches the known fraud type | 55 of 119 | 53 of 119 |
+| Output moved by a note (8 notes, of 240) | 7 | 16 |
+| Moved and not blocked | 2 | 4 |
+
+The rule baseline names the pattern correctly for 70 of 119. Both models also under-call patterns the rule finds, so about a quarter of cases would fall back to manual review in this configuration. The first live run, before I fixed the bench, blocked 117 of 120 for Sonnet because my own number check counted a citation like "F3" as an invented number: the bench was wrong, not the model, and that is recorded as finding C7. Read the attack rows as a direction to repeat with more cases, not a ranking.
 
 The most useful result is the gap: form checks cannot see an assistant that quietly obeys an injected instruction, and they cannot judge a claim with no numbers. Full findings log and verdict: [docs/part_c_validation.md](docs/part_c_validation.md). Monitoring and kill-switch design (design only, not implemented): [docs/monitoring_design.md](docs/monitoring_design.md).
 
@@ -200,7 +212,8 @@ linkedin/                      # carousel PDFs + post copy (tools/make_carousels
 - [x] **Week 1 artifact** — validation framework doc ([docs/validation_framework.md](docs/validation_framework.md))
 - [x] **Part B** — independent validation package: model card, CleanLab pass, SHAP review, challenger benchmark, ablation + perturbation stress, PSI drift, risk-rated findings log ([validation report](docs/validation_report.md))
 - [x] **Part C, test bench** — case facts, assistant contract, guardrails with tests, seeded-fault and red-team harness, findings log, monitoring design (stand-in assistants)
-- [ ] **Part C, live model** — run a real LLM through the harness and report its rates separately; add a calibrated semantic judge (finding C2) and typed claim slots (C3)
+- [x] **Part C, live models, first run** — Claude Sonnet 5.5 and GPT-6.1-sol through the same bench (findings C7–C9)
+- [ ] **Part C, live models, properly** — repeats, more cases per attack, a second prompt; a calibrated semantic judge (C2) and typed claim slots (C3)
 - [ ] Stretch: GNN fraud-ring detection on the entity graph
 
 ## Author
