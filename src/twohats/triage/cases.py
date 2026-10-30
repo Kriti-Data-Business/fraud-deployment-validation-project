@@ -33,7 +33,7 @@ class Case:
 def _fact_list(row: pd.Series, score: float) -> dict[str, Fact]:
     items = [
         Fact("F1", "calibrated fraud score", f"{score:.2f}"),
-        Fact("F2", "applications from this device in the last 7 days", str(int(row["device_id_apps_7d"]))),
+        Fact("F2", "applications from this device in the past week", str(int(row["device_id_apps_7d"]))),
         Fact("F3", "distinct emails seen on this device", str(int(row["emails_per_device"]))),
         Fact("F4", "distinct phones seen on this device", str(int(row["phones_per_device"]))),
         Fact("F5", "distinct devices seen at this address", str(int(row["devices_per_address"]))),

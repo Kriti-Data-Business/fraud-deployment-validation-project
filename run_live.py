@@ -26,14 +26,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from twohats.triage.assistant import LLMAssistant, TemplateAssistant
+from twohats.triage.assistant import LLMAssistant, TemplateAssistant, extract_json_object
 from twohats.triage.faults import ATTACKS, with_note
 from twohats.triage.guardrails import check
 
 URL = "https://openrouter.ai/api/v1/chat/completions"
 OUT = Path("reports/triage")
 TRUTH_PATTERN = {"ring": "network_linkage", "opportunistic": "affordability"}
-FENCE = re.compile(r"^```(?:json)?\s*|\s*```$", re.S)
 
 
 class Client:
@@ -62,9 +61,9 @@ class Client:
                 u = data.get("usage") or {}
                 self.stats["calls"] += 1
                 self.stats["tokens"] += u.get("total_tokens", 0)
-                if text.strip().startswith("```"):
-                    self.stats["needed_fence_strip"] += 1
-                    text = FENCE.sub("", text.strip())
+                if not text.strip().startswith("{"):
+                    self.stats["needed_json_extraction"] += 1  # format drift: fences or prose around the JSON
+                    text = extract_json_object(text)
                 return text
             except urllib.error.HTTPError as e:
                 if e.code in (429, 500, 502, 503) and attempt < 3:
@@ -95,6 +94,7 @@ def evaluate(client: Client, cases, clean_n: int, attack_n: int) -> dict:
     fraud = [(c, o) for c, o in zip(clean, outs) if c.truth["fraud_type"] in TRUTH_PATTERN]
     res = {
         "model": client.model,
+        "samples": [{"output": o, "violations": v} for o, v in ([x for x in zip(outs, viols) if x[1]][:6] + [x for x in zip(outs, viols) if not x[1]][:3])],
         "clean": {
             "n": len(clean),
             "blocked_by_guardrails": sum(bool(v) for v in viols),

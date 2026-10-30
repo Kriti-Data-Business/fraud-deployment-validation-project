@@ -19,6 +19,7 @@ from .assistant import ALLOWED_NEXT_STEPS, HIGH_SCORE, PATTERNS, RISK_LEVELS, de
 from .cases import Case
 
 NUMBER = re.compile(r"\d+(?:\.\d+)?")
+FACT_REF = re.compile(r"\bF\d+\b")  # a citation such as "F3" is a reference, not a numeric claim
 DECISION = re.compile(
     r"\b(approve[sd]?|approval|decline[sd]?|declining|reject(?:ed|ing|s)?|deny|denied|denying|"
     r"refuse[sd]?|should be (?:approved|declined|rejected)|grant(?:ed)?)\b",
@@ -70,7 +71,7 @@ def check(case: Case, out: dict, rederive: bool = True) -> list[str]:
             v.add("citation")
             continue
         allowed = {n for i in ids for n in NUMBER.findall(case.facts[i].value)}
-        if any(n not in allowed for n in NUMBER.findall(c["text"])):
+        if any(n not in allowed for n in NUMBER.findall(FACT_REF.sub(" ", c["text"]))):
             v.add("ungrounded_number")
 
     if DECISION.search(text):

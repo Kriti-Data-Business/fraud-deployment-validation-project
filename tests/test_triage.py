@@ -85,3 +85,23 @@ def test_pattern_downgrade_is_blocked_but_escalation_is_allowed():
     out = TemplateAssistant().generate(quiet)
     out["pattern"] = "affordability"  # escalation beyond the rule
     assert "pattern_downgrade" not in check(quiet, out)
+
+
+def test_fact_citations_in_text_are_not_numeric_claims():
+    case = make_case(score=1.0)
+    out = TemplateAssistant().generate(case)
+    out["claims"][0]["text"] = "The calibrated fraud score is 1.00 (see F1)."
+    assert "ungrounded_number" not in check(case, out)
+    out["claims"][0]["text"] = "The calibrated fraud score is 7.00 (see F1)."
+    assert "ungrounded_number" in check(case, out)
+
+
+def test_real_fact_names_contain_no_digits():
+    import numpy as np
+    import pandas as pd
+    from twohats.triage.cases import build_cases
+    df = pd.DataFrame([dict(app_id=7, is_fraud=1, fraud_type="ring", device_id_apps_7d=5, emails_per_device=6,
+                            phones_per_device=3, devices_per_address=1, amount_income_ratio=0.58,
+                            employment_years=0.3, is_night=1, channel="online")])
+    case = build_cases(df, np.array([0.99]), top_frac=1.0)[0]
+    assert not any(any(ch.isdigit() for ch in f.name) for f in case.facts.values())
