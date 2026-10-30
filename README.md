@@ -6,7 +6,7 @@ This project plays both roles in a bank's model lifecycle, honestly and in seque
 
 - 🎩 **Hat 1 — Line 1 (Part A):** build a production-shaped **application-fraud detection model** — entity-linkage features, imbalance-aware training, calibrated scores, case-prioritisation metrics.
 - 🎩 **Hat 2 — Line 2 (Part B):** take the developer hat off and produce a full **independent validation package** of that same model — conceptual soundness challenge, data-quality assessment, explainability review, challenger benchmarking, stability/drift testing, and a risk-rated findings log — structured the way bank Model Risk Management teams write validation reports (SR 11-7 → SR 26-2 lineage, APRA CPG 235 framing).
-- 🤖 **Part C (planned):** add an **LLM fraud-triage assistant** and validate *it* — evaluation harness, guardrails, red-team failure-mode testing, and a continuous-monitoring design for exactly the class of system that current model-risk guidance (SR 26-2, Apr 2026) leaves out of formal scope.
+- 🤖 **Part C (test bench built, live model pending):** an **LLM fraud-triage assistant** contract and the harness that validates it: evaluation, guardrails, red-team testing and a continuous-monitoring design, for exactly the class of system that current model-risk guidance (SR 26-2, Apr 2026) leaves out of formal scope. Results so far come from deterministic stand-in assistants, not a live LLM.
 
 Why this shape: banks run on the three-lines-of-defence model, but almost every portfolio project only ever wears Hat 1. The interesting craft — and the hiring gap — is in Hat 2: proving whether a model is *fit for purpose*, not just performant. Building both sides against the same model, on data with known ground truth, makes the validation checkable rather than performative.
 
@@ -124,6 +124,25 @@ What the validation caught that Part A's "shippable" metrics hid:
 
 The research-grounded failure-scenario catalog behind these checks: [docs/validation_scenarios.md](docs/validation_scenarios.md).
 
+## Part C: validating the LLM triage layer
+
+The assistant never decides. It turns a flagged application's numbered facts into a short, cited summary for an investigator, and everything around it is built to answer one question: how do we know its output can be relied on, and what happens when it cannot?
+
+**Status, stated plainly:** the test bench is built and run. A live LLM has not yet been run through it. The numbers below measure the harness and guardrails using deterministic stand-in assistants with defects injected on purpose ("validating the validator").
+
+`python run_triage.py` runs it on the Part A model's top-1% queue (120 cases). `pytest tests` tests the guardrails.
+
+| Check | Result |
+|---|---|
+| Guardrail false alarms on clean output | 0 of 120 |
+| Seeded faults caught | 1,200 of 1,320; 10 of 11 fault types caught every time |
+| Never caught | a false claim that contains no numbers (0 of 120) |
+| Quiet prompt-injection compliance, escaped form-level checks | 720 of 720 |
+| Same, after adding independent pattern re-derivation | 12 of 720 escaped |
+| Baseline pattern accuracy vs ground truth | ring 49 of 65, opportunistic 21 of 54 |
+
+The most useful result is the gap: form checks cannot see an assistant that quietly obeys an injected instruction, and they cannot judge a claim with no numbers. Full findings log and verdict: [docs/part_c_validation.md](docs/part_c_validation.md). Monitoring and kill-switch design (design only, not implemented): [docs/monitoring_design.md](docs/monitoring_design.md).
+
 ## LinkedIn write-up
 
 The story and a 10-item field guide to silent fraud-model failure modes, built as swipeable carousels: [linkedin/carousel_1_two_hats_story.pdf](linkedin/carousel_1_two_hats_story.pdf), [linkedin/carousel_2_silent_failure_modes.pdf](linkedin/carousel_2_silent_failure_modes.pdf), post captions in [linkedin/post_copy.md](linkedin/post_copy.md).
@@ -145,6 +164,11 @@ docs/model_card.md            # champion model card + assumptions register
 docs/PROJECT_PLAN.md          # roadmap and phase gates
 reports/figures/               # Part A charts (PR curve, calibration, feature importance)
 reports/validation/figures/    # Part B charts (challenger, ablation, segment, SHAP)
+run_triage.py                  # Part C entrypoint: flagged queue, seeded faults, red-team
+src/twohats/triage/            # case facts, assistant contract, guardrails, faults
+tests/test_triage.py           # guardrail tests
+docs/part_c_validation.md      # Part C findings log + verdict
+docs/monitoring_design.md      # monitoring + kill-switch design (design only)
 linkedin/                      # carousel PDFs + post copy (tools/make_carousels.py generates them)
 ```
 
@@ -153,7 +177,8 @@ linkedin/                      # carousel PDFs + post copy (tools/make_carousels
 - [x] **Part A** — fraud model v1: pipeline, calibrated model, evaluation report
 - [x] **Week 1 artifact** — validation framework doc ([docs/validation_framework.md](docs/validation_framework.md))
 - [x] **Part B** — independent validation package: model card, CleanLab pass, SHAP review, challenger benchmark, ablation + perturbation stress, PSI drift, risk-rated findings log ([validation report](docs/validation_report.md))
-- [ ] **Part C** — LLM fraud-triage assistant + its validation: DeepEval suite, guardrails, red-team failure modes, continuous-monitoring design
+- [x] **Part C, test bench** — case facts, assistant contract, guardrails with tests, seeded-fault and red-team harness, findings log, monitoring design (stand-in assistants)
+- [ ] **Part C, live model** — run a real LLM through the harness and report its rates separately; add a calibrated semantic judge (finding C2) and typed claim slots (C3)
 - [ ] Stretch: GNN fraud-ring detection on the entity graph
 
 ## Author

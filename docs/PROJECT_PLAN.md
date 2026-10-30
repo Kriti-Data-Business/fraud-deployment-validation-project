@@ -28,11 +28,12 @@ Target roles this project speaks to: AI/model validation in Model Risk Managemen
 
 ## Gate 3 — LLM triage assistant + its validation *(target ~13 Sep 2026)*
 
-- [ ] LLM case-summary/triage assistant over flagged applications
-- [ ] DeepEval suite: faithfulness, groundedness, format compliance
-- [ ] Red-team set: prompt injection via application text, contradiction traps; measured failure rates
-- [ ] Guardrails layer + tests of the guardrails themselves
-- [ ] Continuous-monitoring + kill-switch/fallback design doc
+- [x] Case-summary/triage assistant contract over flagged applications (baseline + LLM adapter; live model not yet run)
+- [x] Deterministic evaluators: groundedness, citation, format compliance (DeepEval not used; a model-graded judge is still to add)
+- [x] Red-team set: prompt injection via applicant note, contradiction traps; measured failure rates (stand-in assistants)
+- [x] Guardrails layer + tests of the guardrails themselves
+- [x] Continuous-monitoring + kill-switch/fallback design doc (design only)
+- [ ] Run a live LLM through the harness; add semantic judge (C2)
 - [ ] Medium article published; portfolio entry updated
 
 ## Stretch
